@@ -71,7 +71,7 @@ const MAX_RADIUS: f32 = 20.0;
 const TARGET_RADIUS: f32 = 1.;
 const TARGET_DISTANCE: f32 = 8.;
 const DEADZONE_RADIUS_SQUARED: f32 = 4.;
-const DEADZONE_ADJ_THETA: f32 = -0.02;
+const DEADZONE_ADJ_THETA: f32 = 0.3;
 
 fn create_assets(
     mut commands: Commands,
@@ -269,6 +269,7 @@ fn target_hit(
     )
 }
 
+/// Pass deadzone to run checks to keep the new target from being too close to e.g. the previous one
 fn spawn_target(
     commands: &mut Commands,
     my_assets: &Res<MyAssets>,
@@ -279,14 +280,13 @@ fn spawn_target(
     let mut target_center = random_normalized_vec3() * TARGET_DISTANCE;
 
     if let Some(deadzone) = deadzone {
+        // Might need to move the target so it's not too close to the deadzone
         let btwn = target_center - deadzone;
         let distance_sq = btwn.length_squared();
-        println!("dist is {:?} before adjustment", distance_sq);
         if distance_sq < DEADZONE_RADIUS_SQUARED {
-            let rot_axis = btwn.cross(target_center);
+            let rot_axis = target_center.cross(btwn).normalize();
             let rot = Quat::from_axis_angle(rot_axis, DEADZONE_ADJ_THETA);
             target_center = rot.mul_vec3(target_center);
-            println!("dist is {:?} after adjustment", distance_sq);
         }
     }
 
